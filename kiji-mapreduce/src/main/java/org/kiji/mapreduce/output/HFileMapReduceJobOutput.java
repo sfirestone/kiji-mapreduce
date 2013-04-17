@@ -176,11 +176,12 @@ public final class HFileMapReduceJobOutput extends KijiTableMapReduceJobOutput {
    *
    * @param tableURI URI of the Kiji table to split.
    * @param nsplits Number of splits.
-   * @param conf hbase configuration
+   * @param conf Base Hadoop configuration used to open the Kiji instance.
    * @return a list of split start keys, as HFileKeyValue (with no value, just the keys).
    * @throws IOException on I/O error.
    */
-  private static List<HFileKeyValue> makeTableKeySplit(KijiURI tableURI, int nsplits,
+  private static List<HFileKeyValue> makeTableKeySplit(KijiURI tableURI,
+                                                       int nsplits,
                                                        Configuration conf)
       throws IOException {
     final Kiji kiji = Kiji.Factory.open(tableURI, conf);

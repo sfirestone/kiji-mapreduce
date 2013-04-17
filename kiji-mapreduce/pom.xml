@@ -22,14 +22,14 @@
 
   <groupId>org.kiji.mapreduce</groupId>
   <artifactId>kiji-mapreduce</artifactId>
-  <version>1.0.0-rc6-internal-poc</version>
+  <version>1.0.0-rc6-internal-poc2</version>
   <packaging>jar</packaging>
 
   <parent>
     <groupId>org.kiji.mapreduce</groupId>
     <artifactId>kiji-mapreduce-root</artifactId>
-    <version>1.0.0-rc6-internal-poc</version>
-    </parent>
+    <version>1.0.0-rc6-internal-poc2</version>
+  </parent>
 
   <name>KijiMR</name>
   <description>A framework for interacting with Kiji Through MapReduce</description>
