@@ -201,6 +201,7 @@ public final class HFileMapReduceJobOutput extends KijiTableMapReduceJobOutput {
             // The user has explicitly specified how many HFiles to create, but this is not
             // possible when row key hashing is disabled.
             throw new JobConfigurationException(String.format(
+
                 "Table '%s' has row key hashing disabled, so the number of HFile splits must be"
                 + "determined by the number of HRegions in the HTable. "
                 + "Use an HFileMapReduceJobOutput constructor that enables auto splitting.",
