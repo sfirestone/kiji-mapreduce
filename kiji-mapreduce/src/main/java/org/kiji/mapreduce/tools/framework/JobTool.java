@@ -30,6 +30,7 @@ import org.kiji.common.flags.Flag;
 import org.kiji.mapreduce.MapReduceJobInput;
 import org.kiji.mapreduce.MapReduceJobOutput;
 import org.kiji.mapreduce.framework.MapReduceJobBuilder;
+import org.kiji.schema.platform.SchemaPlatformBridge;
 import org.kiji.schema.tools.BaseTool;
 
 /**
@@ -89,6 +90,11 @@ public abstract class JobTool<B extends MapReduceJobBuilder> extends BaseTool {
    */
   protected void configure(B jobBuilder)
       throws ClassNotFoundException, IOException {
+    // Get Hadoop config files (hdfs-site.xml, etc) into Configuration objects.
+    // The Configuration for this instance will also get the new default values as
+    // an underlay.
+    SchemaPlatformBridge.get().initializeHadoopResources();
+
     // Use default environment configuration:
     jobBuilder.withConf(getConf());
 
@@ -109,7 +115,21 @@ public abstract class JobTool<B extends MapReduceJobBuilder> extends BaseTool {
     final B jobBuilder = createJobBuilder();
     Preconditions.checkNotNull(jobBuilder, "Internal error: unable to create job builder?");
     configure(jobBuilder);
-    return jobBuilder.build().run() ? 0 : 1;
+
+    try {
+      final boolean success = jobBuilder.build().run();
+
+      if (success) {
+        getPrintStream().println("Job successful");
+      } else {
+        getPrintStream().println("Job failed!");
+      }
+
+      return success ? 0 : 1;
+    } catch (RuntimeException exception) {
+      getPrintStream().println("\nJob failed with exception: " + exception.getMessage());
+      throw exception;
+    }
   }
 
   /** @return the job input. */

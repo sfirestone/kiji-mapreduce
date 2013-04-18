@@ -537,12 +537,11 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
 
     /** {@inheritDoc} */
     @Override
-    public boolean containsKey(EntityId key) throws IOException {
+    public boolean containsKey(EntityId entityId) throws IOException {
       if (!isOpen()) {
         throw new IOException("Closed");
       }
 
-      EntityId entityId = mKijiTable.getEntityId(key);
       if (null != mResultCache && mResultCache.containsKey(entityId)) {
         return true; // Cache hit.
       }
