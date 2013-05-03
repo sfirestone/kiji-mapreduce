@@ -1,0 +1,515 @@
+diff --git a/kiji-mapreduce/src/main/java/org/kiji/mapreduce/framework/KijiTableInputFormat.java b/kiji-mapreduce/src/main/java/org/kiji/mapreduce/framework/KijiTableInputFormat.java
+index 18187bd..fe59fcf 100644
+--- a/kiji-mapreduce/src/main/java/org/kiji/mapreduce/framework/KijiTableInputFormat.java
++++ b/kiji-mapreduce/src/main/java/org/kiji/mapreduce/framework/KijiTableInputFormat.java
+@@ -59,7 +59,7 @@ import org.kiji.schema.util.ResourceUtils;
+ 
+ /** InputFormat for Hadoop MapReduce jobs reading from a Kiji table. */
+ @ApiAudience.Framework
+-public final class KijiTableInputFormat
++public class KijiTableInputFormat
+     extends InputFormat<EntityId, KijiRowData>
+     implements Configurable {
+   /** Configuration of this input format. */
+diff --git a/kiji-mapreduce/src/main/java/org/kiji/mapreduce/framework/SmartKijiTableInputFormat.java b/kiji-mapreduce/src/main/java/org/kiji/mapreduce/framework/SmartKijiTableInputFormat.java
+new file mode 100644
+index 0000000..c5bccbe
+--- /dev/null
++++ b/kiji-mapreduce/src/main/java/org/kiji/mapreduce/framework/SmartKijiTableInputFormat.java
+@@ -0,0 +1,251 @@
++/**
++ * (c) Copyright 2013 WibiData, Inc.
++ *
++ * See the NOTICE file distributed with this work for additional
++ * information regarding copyright ownership.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.kiji.mapreduce.framework;
++
++import java.io.IOException;
++import java.util.Arrays;
++import java.util.List;
++
++import com.google.common.base.Strings;
++import com.google.common.collect.Lists;
++import org.apache.commons.net.util.Base64;
++import org.apache.hadoop.conf.Configuration;
++import org.apache.hadoop.hbase.mapreduce.TableSplit;
++import org.apache.hadoop.hbase.util.Bytes;
++import org.apache.hadoop.mapreduce.InputSplit;
++import org.apache.hadoop.mapreduce.JobContext;
++
++import org.kiji.mapreduce.impl.KijiTableSplit;
++import org.kiji.schema.Kiji;
++import org.kiji.schema.KijiRegion;
++import org.kiji.schema.KijiTable;
++import org.kiji.schema.KijiURI;
++import org.kiji.schema.avro.RowKeyFormat2;
++import org.kiji.schema.impl.HBaseKijiTable;
++import org.kiji.schema.util.ResourceUtils;
++
++/**
++ * This name really sucks. But it's POC currently.
++ *
++ * @author essandem
++ */
++public class SmartKijiTableInputFormat extends KijiTableInputFormat {
++  /**  Start key if the hash were skipped. */
++  public static final String KIJI_POST_HASH_START_KEY = "kiji.input.posthash.start.key";
++
++  public static final int MIN_SUPPORTED_HASH_SIZE = 1;
++  public static final int MAX_SUPPORTED_HASH_SIZE = 2;
++
++
++    /** {@inheritDoc} */
++    @Override
++    public List<InputSplit> getSplits(JobContext context) throws IOException {
++      final Configuration conf = context.getConfiguration();
++
++      // Get the start and limit keys. Ensure they exist.
++      String postHashStartKeyEncoded = conf.get(KIJI_POST_HASH_START_KEY);
++      if (Strings.isNullOrEmpty(postHashStartKeyEncoded)) {
++        throw new IOException(String.format("Must define configuration property [%s]",
++                                            KIJI_POST_HASH_START_KEY));
++      }
++      // Get our desired start key not including the hash. If all of the bytes in this key
++      // are "full", then we can't use it as a prefix.
++      byte[] postHashStartKey = Base64.decodeBase64(postHashStartKeyEncoded);
++      byte[] unincrementableKey = new byte[postHashStartKey.length];
++      Arrays.fill(unincrementableKey, (byte)-1);
++      if (Bytes.equals(postHashStartKey, unincrementableKey)
++          || Bytes.equals(postHashStartKey, new byte[postHashStartKey.length])) {
++        // This could probably use a better error message, and better explication overall.
++        throw new IOException(String.format("Invalid value [%s] for configuration propert [%s]: "
++                                            + "post hash start key must be incrementable",
++                                            postHashStartKeyEncoded, KIJI_POST_HASH_START_KEY));
++      }
++
++      // In cases were the end key does not equal the postHashStartKey, we'll want to use
++      // the said prefix + 1.
++      byte[] postHashEndKey = postHashStartKey.clone();
++      incrementKey(postHashEndKey, 1);
++
++      final KijiURI inputTableURI = KijiURI.newBuilder(
++                                      conf.get(KijiConfKeys.KIJI_INPUT_TABLE_URI)).build();
++      final Kiji kiji = Kiji.Factory.open(inputTableURI, conf);
++      try {
++        final KijiTable table = kiji.openTable(inputTableURI.getTable());
++        RowKeyFormat2 rowKeyFormat2 = (RowKeyFormat2) table.getLayout().getDesc().getKeysFormat();
++        int hashSize = rowKeyFormat2.getSalt().getHashSize();
++        if (hashSize < MIN_SUPPORTED_HASH_SIZE || hashSize > MAX_SUPPORTED_HASH_SIZE) {
++          throw new IOException(String.format("Hash size of %d - %d supported, found %d",
++                                              MAX_SUPPORTED_HASH_SIZE,
++                                              MAX_SUPPORTED_HASH_SIZE,
++                                              hashSize));
++        }
++        try {
++          final byte[] htableName = HBaseKijiTable.downcast(table).getHTable().getTableName();
++          final List<InputSplit> splits = Lists.newArrayList();
++
++          byte[] currentStartHash = new byte[hashSize];
++          byte[] currentEndHash = new byte[hashSize];
++
++          for (KijiRegion region : table.getRegions()) {
++            final byte[] regionStartKey = region.getStartKey();
++            final byte[] regionEndKey = region.getEndKey();
++            // Set prefix bytes to value of the regionStartKey hash, likewise for the end.
++            // In the case that either region key is 0, set the hash in the current key
++            // to lexographical min or max respectively. Also, to simplify later comparisons,
++            // make the region keys the same as our current key.
++            if (regionStartKey.length == 0) {
++              Arrays.fill(currentStartHash, (byte)0);
++            } else {
++              System.arraycopy(regionStartKey, 0, currentStartHash, 0, hashSize);
++            }
++            if (regionEndKey.length == 0) {
++              Arrays.fill(currentEndHash, (byte)-1);
++            } else {
++              System.arraycopy(regionEndKey, 0, currentEndHash, 0, hashSize);
++            }
++
++            // This is modified from o.a.h.h.m.TableInputFormatBase.
++            // It differs in that rather than check against global scan limits,
++            // it uses the ones bounded by the hash prefixes of the start and end of the region.
++            // The checks for zero length start and end are removed because
++            // we enforce their existence.
++            byte[] splitStartKey;
++            switch (compareRegionBoundaryToPostHashPrefix(regionStartKey,
++                                                          postHashStartKey,
++                                                          hashSize,
++                                                          -1)) {
++              case 0:
++                splitStartKey = regionStartKey;
++                break;
++              case 1:
++                // Add one to the region's hash prefix
++                incrementKey(currentStartHash, 1);
++                splitStartKey = Bytes.add(currentStartHash, postHashStartKey);
++                break; // This should fall through, but findbugs fails it. Lame
++              default: // aka -1
++                splitStartKey = Bytes.add(currentStartHash, postHashStartKey);
++                break;
++            }
++
++            byte[] splitEndKey;
++            switch (compareRegionBoundaryToPostHashPrefix(regionEndKey,
++                                                          postHashStartKey,
++                                                          hashSize,
++                                                          1)) {
++              case 0:
++                splitEndKey = regionEndKey;
++                break;
++              case -1:
++                // Decrement the hash, since we are currently outside of the region.
++                incrementKey(currentEndHash, -1);
++                splitEndKey = Bytes.add(currentEndHash, postHashEndKey);
++                break; // This should fall through, but findbugs fails it. Lame
++              default: // aka 1
++                splitEndKey = Bytes.add(currentEndHash, postHashEndKey);
++                break;
++            }
++
++            if (Bytes.compareTo(splitStartKey, splitEndKey) < 0
++                && (regionEndKey.length == 0 || Bytes.compareTo(splitStartKey, regionEndKey) < 0)
++                && Bytes.compareTo(splitEndKey, regionStartKey) > 0) {
++
++              // TODO(KIJIMR-65): For now pick the first available location (ie. region server),
++              // if any.
++              final String location =
++                      region.getLocations().isEmpty()
++                          ? null : region.getLocations().iterator().next();
++              final TableSplit tableSplit =
++                      new TableSplit(htableName, splitStartKey, splitEndKey, location);
++              splits.add(new KijiTableSplit(tableSplit, splitStartKey));
++            }
++          }
++          return splits;
++        } finally {
++            ResourceUtils.releaseOrLog(table);
++        }
++      } finally {
++          ResourceUtils.releaseOrLog(kiji);
++      }
++    }
++
++  /**
++   * Compares a region boundary to the post-hash prefix that we are searching for.
++   * <p/>
++   * The purpose is to compare the section of {@code regionBoundaryKey} that should contain
++   * the post-hash prefix with our desired post-hash prefix. That section starts at the index
++   * equal to the size of the hash and ends at the minimum of region boundary length (less the
++   * hash size) or the post-hash-prefix length. In other words, if the region key is longer
++   * than the hash and the prefix together, only the prefix section will be compared. Otherwise,
++   * as many bytes as exist after the hash will be use.
++   * <p/>
++   * Once the comaprison is done, this method will return -1 if the region prefix is before
++   * the desired prefix, 1 if it comes after, and 0 if they are equal.
++   * <p/>
++   * Lastly, since HBase has a special meaning for a zero-length region boundary we provide
++   * a means by which to declare what the return value should be in that case via the
++   * {@code valueForEmptyBoundary} parameter. Typically, region start key's with zero length come
++   * before everything (return -1), and end key's come after everything (return 1).
++   *
++   * @param regionBoundaryKey to compare
++   * @param postHashPrefix to compare
++   * @param hashSize length of hash prefix in {@code regionBoundaryKey}
++   * @param valueForEmptyBoundary what to return if {@code regionBoundary.length == 0}
++   * @return -1, 0, or 1 depending on whether the region should be considered to come before,
++   *         equal, or after the prefix
++   */
++  private int compareRegionBoundaryToPostHashPrefix(byte[] regionBoundaryKey,
++                                                    byte[] postHashPrefix,
++                                                    int hashSize,
++                                                    int valueForEmptyBoundary) {
++    return Integer.signum(regionBoundaryKey.length == 0
++                          ? valueForEmptyBoundary
++                          : Bytes.compareTo(regionBoundaryKey, hashSize,
++                                            Math.min(regionBoundaryKey.length - hashSize,
++                                                     postHashPrefix.length),
++                                            postHashPrefix, 0, postHashPrefix.length));
++  }
++
++  /**
++   * Increments the last byte in a key by 1 or -1 based on the value of
++   * a given sign.
++   * <p/>
++   * The {@code sign} parameter indicates what direction to increment. A positive value
++   * will result in an increment of 1. A negative value results in an increment of -1. If
++   * the value of the last byte in {@code key} is at its limit its increment direction
++   * (i.e., 0 for negative, -1 for positive), the byte at the index prior to it will be incremented.
++   * This logic will continue until one byte is successfully altered or the array is exhausted.
++   * <p/>
++   * Put in plainer terms, attempts to decrement [0, 0, 0, 0] will have no effect. Likewise with
++   * attempts to increment [-1, -1, -1, -1]. Likewise if {@code sign} is 0.
++   *
++   * @param key to increment
++   * @param sign direction to increment
++   */
++  private static void incrementKey(byte[] key, int sign) {
++    sign = Integer.signum(sign);
++    int limit = sign == 1 ? -1 : 0;
++    for (int i = key.length - 1; i >= 0; i--) {
++      if (key[i] != limit) {
++        // Current byte is not "full", increment and return.
++        key[i] = (byte)(key[i] + sign);
++        return;
++      }
++    }
++  }
++}
+diff --git a/kiji-mapreduce/src/test/java/org/kiji/mapreduce/IntegrationTestSmartKijiTableInputFormat.java b/kiji-mapreduce/src/test/java/org/kiji/mapreduce/IntegrationTestSmartKijiTableInputFormat.java
+new file mode 100644
+index 0000000..98843d8
+--- /dev/null
++++ b/kiji-mapreduce/src/test/java/org/kiji/mapreduce/IntegrationTestSmartKijiTableInputFormat.java
+@@ -0,0 +1,178 @@
++/**
++ * (c) Copyright 2012 WibiData, Inc.
++ *
++ * See the NOTICE file distributed with this work for additional
++ * information regarding copyright ownership.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.kiji.mapreduce;
++
++import static org.junit.Assert.assertArrayEquals;
++import static org.junit.Assert.assertEquals;
++
++import java.util.List;
++
++import org.apache.commons.net.util.Base64;
++import org.apache.hadoop.conf.Configuration;
++import org.apache.hadoop.hbase.util.Bytes;
++import org.apache.hadoop.mapreduce.InputSplit;
++import org.apache.hadoop.mapreduce.JobContext;
++import org.apache.hadoop.mapreduce.JobID;
++import org.apache.hadoop.mapreduce.task.JobContextImpl;
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Test;
++
++import org.kiji.mapreduce.framework.KijiConfKeys;
++import org.kiji.mapreduce.framework.SmartKijiTableInputFormat;
++import org.kiji.mapreduce.impl.KijiTableSplit;
++import org.kiji.schema.Kiji;
++import org.kiji.schema.KijiURI;
++import org.kiji.schema.layout.KijiTableLayout;
++import org.kiji.schema.layout.KijiTableLayouts;
++import org.kiji.schema.testutil.AbstractKijiIntegrationTest;
++
++/**
++ * Crazy tests for {@link org.kiji.mapreduce.framework.SmartKijiTableInputFormat}.
++ *
++ * @author essandem
++ */
++public class IntegrationTestSmartKijiTableInputFormat extends AbstractKijiIntegrationTest {
++  public static final String LAYOUT = "org/kiji/mapreduce/layout/smart-input-format-test.json";
++  private KijiTableLayout mTableLayout;
++
++  @Before
++  public void setupTable() throws Exception {
++    final Kiji kiji = Kiji.Factory.open(this.getKijiURI(), getConf());
++    try {
++      this.mTableLayout = KijiTableLayouts.getTableLayout(LAYOUT);
++
++      // Create the table before doing the instance builder. This allows us to define splits.
++      kiji.createTable(this.mTableLayout.getDesc(), createTestSplits());
++    } finally {
++      kiji.release();
++    }
++  }
++
++  @After
++  public void tearDownTable() throws Exception {
++    if (this.mTableLayout == null) {
++      return;
++    }
++    final Kiji kiji = Kiji.Factory.open(this.getKijiURI(), getConf());
++    try {
++        kiji.deleteTable(this.mTableLayout.getName());
++    } finally {
++      kiji.release();
++    }
++  }
++
++  @Test
++  public void runMySweetTest() throws Exception {
++    SmartKijiTableInputFormat inputFormat = new SmartKijiTableInputFormat();
++    Configuration configuration = new Configuration();
++    KijiURI tableURI =
++        KijiURI.newBuilder(this.getKijiURI()).withTableName(this.mTableLayout.getName()).build();
++    configuration.set(KijiConfKeys.KIJI_INPUT_TABLE_URI, tableURI.toString());
++    configuration.set(SmartKijiTableInputFormat.KIJI_POST_HASH_START_KEY,
++        Base64.encodeBase64String(Bytes.toBytes(23)));
++    JobContext jobContext = new JobContextImpl(configuration, new JobID("test", 1));
++
++    List<InputSplit> splits = inputFormat.getSplits(jobContext);
++
++    assertEquals("wrong number of splits", 11, splits.size());
++
++    KijiTableSplit split = (KijiTableSplit)splits.get(0);
++    assertArrayEquals("wrong split start for 0", createSplitKey(0, 23), split.getStartRow());
++    assertArrayEquals("wrong split end for 0", createSplitKey(0, 24), split.getEndRow());
++
++    split = (KijiTableSplit)splits.get(1);
++    assertArrayEquals("wrong split start for 1", createSplitKey(1, 23), split.getStartRow());
++    assertArrayEquals("wrong split end for 1", createRowKey(1, 23, 247L), split.getEndRow());
++
++    split = (KijiTableSplit)splits.get(2);
++    assertArrayEquals("wrong split start for 2", createRowKey(1, 23, 247L), split.getStartRow());
++    assertArrayEquals("wrong split end for 2", createSplitKey(1, 24), split.getEndRow());
++
++    split = (KijiTableSplit)splits.get(3);
++    assertArrayEquals("wrong split start for 3", createSplitKey(2, 23), split.getStartRow());
++    assertArrayEquals("wrong split end for 3", createSplitKey(3, 24), split.getEndRow());
++
++    split = (KijiTableSplit)splits.get(4);
++    assertArrayEquals("wrong split start for 4", createSplitKey(4, 23), split.getStartRow());
++    assertArrayEquals("wrong split end for 4", createRowKey(5, 23, 12L), split.getEndRow());
++
++    split = (KijiTableSplit)splits.get(5);
++    assertArrayEquals("wrong split start for 5", createRowKey(5, 23, 12L), split.getStartRow());
++    assertArrayEquals("wrong split end for 5", createRowKey(5, 23, 10000L), split.getEndRow());
++
++    split = (KijiTableSplit)splits.get(6);
++    assertArrayEquals("wrong split start for 6", createRowKey(5, 23, 10000L), split.getStartRow());
++    assertArrayEquals("wrong split end for 6", createSplitKey(6, 24), split.getEndRow());
++
++    split = (KijiTableSplit)splits.get(7);
++    assertArrayEquals("wrong split start for 7", createSplitKey(7, 23), split.getStartRow());
++    assertArrayEquals("wrong split end for 7", createRowKey(7, 23, 15L), split.getEndRow());
++
++    split = (KijiTableSplit)splits.get(8);
++    assertArrayEquals("wrong split start for 8", createRowKey(7, 23, 15L), split.getStartRow());
++    assertArrayEquals("wrong split end for 8", createRowKey(9, 23, 167L), split.getEndRow());
++
++    split = (KijiTableSplit)splits.get(9);
++    assertArrayEquals("wrong split start for 9", createRowKey(9, 23, 167L), split.getStartRow());
++    assertArrayEquals("wrong split end for 9", createSplitKey(9, 24), split.getEndRow());
++
++    split = (KijiTableSplit)splits.get(10);
++    assertArrayEquals("wrong split start for 10", createSplitKey(10, 23), split.getStartRow());
++    assertArrayEquals("wrong split end for 10", createSplitKey(-1, 24), split.getEndRow());
++  }
++
++  private byte[][] createTestSplits() {
++    // This does not use EntityId factory
++    byte[][] splits = new byte[11][];
++    // What we want is to find splits for the prefix 23. This will try to exercise
++    // All the different ways in which that might get weird.
++    splits[0] = createRowKey(1, 0, 0L); // One entire hash exists for the prefix exists here.
++    splits[1] = createRowKey(1, 23, 247L); // Part of one hash exists here (beginning).
++    splits[2] = createRowKey(2, 0, 0L); // Part of one hash exists here (end).
++    splits[3] = createRowKey(3, 24, 0L); // Contains all of two hashes, entirely.
++    splits[4] = createRowKey(5, 23, 12L); // One whole hash and beginning of another.
++    splits[5] = createRowKey(5, 23, 10000L); // Entire region is one hash for our prefix.
++    splits[6] = createRowKey(6, 25, 0L); // End of one hash, plus another.
++    splits[7] = createRowKey(7, 23, 15L); // Just the start of a hash.
++    splits[8] = createRowKey(9, 23, 167L); // End of one, all of another, beginning of next.
++    splits[9] = createRowKey(10, 12, 0L); // End of last hash.
++    splits[10] = createRowKey(10, 20, 0L); // This region should not be selected.
++
++    return splits;
++  }
++
++  private byte[] createRowKey(int hash, int prefix, long value) {
++    byte[] rowKey = new byte[Bytes.SIZEOF_BYTE + Bytes.SIZEOF_INT + Bytes.SIZEOF_LONG];
++    rowKey[0] = (byte)hash;
++    System.arraycopy(Bytes.toBytes(prefix), 0, rowKey, Bytes.SIZEOF_BYTE, Bytes.SIZEOF_INT);
++    System.arraycopy(Bytes.toBytes(value), 0, rowKey,
++                     Bytes.SIZEOF_BYTE + Bytes.SIZEOF_INT, Bytes.SIZEOF_LONG);
++    return rowKey;
++  }
++
++  private byte[] createSplitKey(int hash, int prefix) {
++    byte[] splitKey = new byte[Bytes.SIZEOF_BYTE + Bytes.SIZEOF_INT];
++    splitKey[0] = (byte)hash;
++    System.arraycopy(Bytes.toBytes(prefix), 0, splitKey, Bytes.SIZEOF_BYTE, Bytes.SIZEOF_INT);
++    return splitKey;
++  }
++
++
++}
+diff --git a/kiji-mapreduce/src/test/resources/org/kiji/mapreduce/layout/smart-input-format-test.json b/kiji-mapreduce/src/test/resources/org/kiji/mapreduce/layout/smart-input-format-test.json
+new file mode 100644
+index 0000000..6efcf6f
+--- /dev/null
++++ b/kiji-mapreduce/src/test/resources/org/kiji/mapreduce/layout/smart-input-format-test.json
+@@ -0,0 +1,55 @@
++/**
++ * (c) Copyright 2012 WibiData, Inc.
++ *
++ * See the NOTICE file distributed with this work for additional
++ * information regarding copyright ownership.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++{
++  name: "smart_input_format_test",
++  description: "Table used for testing purposes.",
++  keys_format: {
++    encoding: "FORMATTED",
++    salt: {
++      hash_type:"MD5",
++      hash_size:1
++    },
++    range_scan_start_index: 2,
++    nullable_start_index: 2,
++    components: [
++    {
++      name:"prefix_component",
++      type:"INTEGER"
++    },
++    {
++      "name":"other_component",
++      "type":"LONG"
++    } ]
++  },
++  locality_groups: [ {
++    name: "default",
++    in_memory: false,
++    max_versions: 1,
++    ttl_seconds: 2147483647,
++    compression_type: "NONE",
++    families: [ {
++      name: "default",
++      columns: [ {
++        name: "data",
++        column_schema: {type: "INLINE", value: '"string"'}
++      } ]
++    } ]
++  } ],
++  version: "layout-1.1.0"
++}
