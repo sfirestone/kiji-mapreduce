@@ -7,14 +7,14 @@ index 1614de1..1c2d92d 100644
    <groupId>org.kiji.mapreduce</groupId>
    <artifactId>build-resources</artifactId>
 -  <version>1.0.0-rc61</version>
-+  <version>1.0.0-rc61-opower-3</version>
++  <version>1.0.0-rc61-opower-4</version>
    <packaging>jar</packaging>
  
    <parent>
      <groupId>org.kiji.mapreduce</groupId>
      <artifactId>kiji-mapreduce-root</artifactId>
 -    <version>1.0.0-rc61</version>
-+    <version>1.0.0-rc61-opower-3</version>
++    <version>1.0.0-rc61-opower-4</version>
      <relativePath>..</relativePath>
    </parent>
  
@@ -27,14 +27,14 @@ index 7c0aab5..7dcb85d 100644
    <groupId>org.kiji.mapreduce</groupId>
    <artifactId>kiji-mapreduce</artifactId>
 -  <version>1.0.0-rc61</version>
-+  <version>1.0.0-rc61-opower-3</version>
++  <version>1.0.0-rc61-opower-4</version>
    <packaging>jar</packaging>
  
    <parent>
      <groupId>org.kiji.mapreduce</groupId>
      <artifactId>kiji-mapreduce-root</artifactId>
 -    <version>1.0.0-rc61</version>
-+    <version>1.0.0-rc61-opower-3</version>
++    <version>1.0.0-rc61-opower-4</version>
    </parent>
  
    <name>KijiMR</name>
@@ -47,7 +47,7 @@ index 8fedabc..562782e 100644
    <groupId>org.kiji.mapreduce</groupId>
    <artifactId>kiji-mapreduce-root</artifactId>
 -  <version>1.0.0-rc61</version>
-+  <version>1.0.0-rc61-opower-3</version>
++  <version>1.0.0-rc61-opower-4</version>
    <packaging>pom</packaging>
  
    <parent>
@@ -57,7 +57,7 @@ index 8fedabc..562782e 100644
      <kiji-platforms.version>1.0.0</kiji-platforms.version>
 -    <kiji-schema.version>1.0.2</kiji-schema.version>
 -    <fake-hbase.version>0.0.5</fake-hbase.version>
-+    <kiji-schema.version>1.0.2-opower-3</kiji-schema.version>
++    <kiji-schema.version>1.0.2-opower-4</kiji-schema.version>
 +    <fake-hbase.version>0.0.5-opower-1</fake-hbase.version>
    </properties>
  
