@@ -1,11 +1,11 @@
 diff --git a/kiji-mapreduce/src/main/java/org/kiji/mapreduce/framework/KijiTableInputFormat.java b/kiji-mapreduce/src/main/java/org/kiji/mapreduce/framework/KijiTableInputFormat.java
-index 18187bd..fe59fcf 100644
+index dcddf8c..6d90596 100644
 --- a/kiji-mapreduce/src/main/java/org/kiji/mapreduce/framework/KijiTableInputFormat.java
 +++ b/kiji-mapreduce/src/main/java/org/kiji/mapreduce/framework/KijiTableInputFormat.java
-@@ -59,7 +59,7 @@ import org.kiji.schema.util.ResourceUtils;
- 
+@@ -62,7 +62,7 @@ import org.kiji.schema.util.ResourceUtils;
  /** InputFormat for Hadoop MapReduce jobs reading from a Kiji table. */
  @ApiAudience.Framework
+ @ApiStability.Evolving
 -public final class KijiTableInputFormat
 +public class KijiTableInputFormat
      extends InputFormat<EntityId, KijiRowData>
@@ -43,7 +43,7 @@ index 0000000..c5bccbe
 +
 +import com.google.common.base.Strings;
 +import com.google.common.collect.Lists;
-+import org.apache.commons.net.util.Base64;
++import org.apache.commons.codec.binary.Base64;
 +import org.apache.hadoop.conf.Configuration;
 +import org.apache.hadoop.hbase.mapreduce.TableSplit;
 +import org.apache.hadoop.hbase.util.Bytes;
@@ -191,7 +191,7 @@ index 0000000..c5bccbe
 +                          ? null : region.getLocations().iterator().next();
 +              final TableSplit tableSplit =
 +                      new TableSplit(htableName, splitStartKey, splitEndKey, location);
-+              splits.add(new KijiTableSplit(tableSplit, splitStartKey));
++              splits.add(new KijiTableSplit(tableSplit));
 +            }
 +          }
 +          return splits;
@@ -273,7 +273,7 @@ new file mode 100644
 index 0000000..98843d8
 --- /dev/null
 +++ b/kiji-mapreduce/src/test/java/org/kiji/mapreduce/IntegrationTestSmartKijiTableInputFormat.java
-@@ -0,0 +1,178 @@
+@@ -0,0 +1,177 @@
 +/**
 + * (c) Copyright 2012 WibiData, Inc.
 + *
@@ -299,13 +299,12 @@ index 0000000..98843d8
 +
 +import java.util.List;
 +
-+import org.apache.commons.net.util.Base64;
++import org.apache.commons.codec.binary.Base64;
 +import org.apache.hadoop.conf.Configuration;
 +import org.apache.hadoop.hbase.util.Bytes;
 +import org.apache.hadoop.mapreduce.InputSplit;
++import org.apache.hadoop.mapreduce.Job;
 +import org.apache.hadoop.mapreduce.JobContext;
-+import org.apache.hadoop.mapreduce.JobID;
-+import org.apache.hadoop.mapreduce.task.JobContextImpl;
 +import org.junit.After;
 +import org.junit.Before;
 +import org.junit.Test;
@@ -363,7 +362,7 @@ index 0000000..98843d8
 +    configuration.set(KijiConfKeys.KIJI_INPUT_TABLE_URI, tableURI.toString());
 +    configuration.set(SmartKijiTableInputFormat.KIJI_POST_HASH_START_KEY,
 +        Base64.encodeBase64String(Bytes.toBytes(23)));
-+    JobContext jobContext = new JobContextImpl(configuration, new JobID("test", 1));
++    JobContext jobContext = new Job(configuration, "test");
 +
 +    List<InputSplit> splits = inputFormat.getSplits(jobContext);
 +
@@ -454,7 +453,7 @@ index 0000000..98843d8
 +}
 diff --git a/kiji-mapreduce/src/test/resources/org/kiji/mapreduce/layout/smart-input-format-test.json b/kiji-mapreduce/src/test/resources/org/kiji/mapreduce/layout/smart-input-format-test.json
 new file mode 100644
-index 0000000..6efcf6f
+index 0000000..4a3693f
 --- /dev/null
 +++ b/kiji-mapreduce/src/test/resources/org/kiji/mapreduce/layout/smart-input-format-test.json
 @@ -0,0 +1,55 @@
@@ -511,5 +510,5 @@ index 0000000..6efcf6f
 +      } ]
 +    } ]
 +  } ],
-+  version: "layout-1.1.0"
++  version: "layout-1.2.0"
 +}

@@ -1,11 +1,11 @@
 diff --git a/kiji-mapreduce/src/main/java/org/kiji/mapreduce/framework/KijiTableInputJobBuilder.java b/kiji-mapreduce/src/main/java/org/kiji/mapreduce/framework/KijiTableInputJobBuilder.java
-index 27bf4d6..062558e 100644
+index a2d2d53..4a61114 100644
 --- a/kiji-mapreduce/src/main/java/org/kiji/mapreduce/framework/KijiTableInputJobBuilder.java
 +++ b/kiji-mapreduce/src/main/java/org/kiji/mapreduce/framework/KijiTableInputJobBuilder.java
-@@ -139,7 +139,7 @@ public abstract class KijiTableInputJobBuilder<T extends KijiTableInputJobBuilde
-     super.configureJob(job);
+@@ -165,7 +165,7 @@ public abstract class KijiTableInputJobBuilder<T extends KijiTableInputJobBuilde
  
      // Validate the Kiji data request against the current table layout:
+     Preconditions.checkNotNull(mInputTableURI, "Input Kiji table was never set.");
 -    final Kiji kiji = Kiji.Factory.open(mInputTableURI);
 +    final Kiji kiji = Kiji.Factory.open(mInputTableURI, job.getConfiguration());
      try {
