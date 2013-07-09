@@ -7,7 +7,7 @@ index 26e6029..d60d881 100644
      <groupId>org.kiji.mapreduce</groupId>
      <artifactId>kiji-mapreduce-root</artifactId>
 -    <version>1.0.0</version>
-+    <version>1.0.0-opower-1</version>
++    <version>1.0.0-opower-1-profiling</version>
      <relativePath>..</relativePath>
    </parent>
  
@@ -20,7 +20,7 @@ index bc2ddda..cff7f20 100644
      <groupId>org.kiji.mapreduce</groupId>
      <artifactId>kiji-mapreduce-root</artifactId>
 -    <version>1.0.0</version>
-+    <version>1.0.0-opower-1</version>
++    <version>1.0.0-opower-1-profiling</version>
      <relativePath>..</relativePath>
    </parent>
  
@@ -33,7 +33,7 @@ index fe4a1f0..768bb1f 100644
      <groupId>org.kiji.mapreduce</groupId>
      <artifactId>kiji-mapreduce-root</artifactId>
 -    <version>1.0.0</version>
-+    <version>1.0.0-opower-1</version>
++    <version>1.0.0-opower-1-profiling</version>
      <relativePath>..</relativePath>
    </parent>
  
@@ -46,7 +46,7 @@ index 08f13d4..7cc58a0 100644
      <groupId>org.kiji.mapreduce</groupId>
      <artifactId>kiji-mapreduce-root</artifactId>
 -    <version>1.0.0</version>
-+    <version>1.0.0-opower-1</version>
++    <version>1.0.0-opower-1-profiling</version>
      <relativePath>..</relativePath>
    </parent>
  
@@ -59,7 +59,7 @@ index bff0c15..4b38b04 100644
      <groupId>org.kiji.mapreduce</groupId>
      <artifactId>kiji-mapreduce-root</artifactId>
 -    <version>1.0.0</version>
-+    <version>1.0.0-opower-1</version>
++    <version>1.0.0-opower-1-profiling</version>
      <relativePath>..</relativePath>
    </parent>
  
@@ -72,7 +72,7 @@ index d3e2f7c..955e8da 100644
      <groupId>org.kiji.mapreduce</groupId>
      <artifactId>kiji-mapreduce-root</artifactId>
 -    <version>1.0.0</version>
-+    <version>1.0.0-opower-1</version>
++    <version>1.0.0-opower-1-profiling</version>
      <relativePath>..</relativePath>
    </parent>
  
@@ -85,7 +85,7 @@ index 148989b..05858f8 100644
      <groupId>org.kiji.mapreduce</groupId>
      <artifactId>kiji-mapreduce-root</artifactId>
 -    <version>1.0.0</version>
-+    <version>1.0.0-opower-1</version>
++    <version>1.0.0-opower-1-profiling</version>
      <relativePath>..</relativePath>
    </parent>
  
@@ -98,7 +98,7 @@ index 78ee76c..61397c5 100644
    <groupId>org.kiji.mapreduce</groupId>
    <artifactId>kiji-mapreduce-root</artifactId>
 -  <version>1.0.0</version>
-+  <version>1.0.0-opower-1</version>
++  <version>1.0.0-opower-1-profiling</version>
    <packaging>pom</packaging>
  
    <parent>
