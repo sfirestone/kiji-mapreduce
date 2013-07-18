@@ -1,5 +1,5 @@
 diff --git a/build-resources/pom.xml b/build-resources/pom.xml
-index 26e6029..d60d881 100644
+index 26e6029..45f96bd 100644
 --- a/build-resources/pom.xml
 +++ b/build-resources/pom.xml
 @@ -25,7 +25,7 @@
@@ -12,7 +12,7 @@ index 26e6029..d60d881 100644
    </parent>
  
 diff --git a/cdh4mr1-bridge/pom.xml b/cdh4mr1-bridge/pom.xml
-index bc2ddda..cff7f20 100644
+index bc2ddda..0414e85 100644
 --- a/cdh4mr1-bridge/pom.xml
 +++ b/cdh4mr1-bridge/pom.xml
 @@ -25,7 +25,7 @@
@@ -25,7 +25,7 @@ index bc2ddda..cff7f20 100644
    </parent>
  
 diff --git a/dist/pom.xml b/dist/pom.xml
-index fe4a1f0..768bb1f 100644
+index fe4a1f0..faed786 100644
 --- a/dist/pom.xml
 +++ b/dist/pom.xml
 @@ -27,7 +27,7 @@
@@ -38,7 +38,7 @@ index fe4a1f0..768bb1f 100644
    </parent>
  
 diff --git a/hadoop1-bridge/pom.xml b/hadoop1-bridge/pom.xml
-index 08f13d4..7cc58a0 100644
+index 08f13d4..5758046 100644
 --- a/hadoop1-bridge/pom.xml
 +++ b/hadoop1-bridge/pom.xml
 @@ -25,7 +25,7 @@
@@ -51,7 +51,7 @@ index 08f13d4..7cc58a0 100644
    </parent>
  
 diff --git a/kiji-mapreduce/pom.xml b/kiji-mapreduce/pom.xml
-index bff0c15..4b38b04 100644
+index a4e723f..3d864f7 100644
 --- a/kiji-mapreduce/pom.xml
 +++ b/kiji-mapreduce/pom.xml
 @@ -26,7 +26,7 @@
@@ -64,7 +64,7 @@ index bff0c15..4b38b04 100644
    </parent>
  
 diff --git a/mr-hadoop1x/pom.xml b/mr-hadoop1x/pom.xml
-index d3e2f7c..955e8da 100644
+index d3e2f7c..7e5c6bc 100644
 --- a/mr-hadoop1x/pom.xml
 +++ b/mr-hadoop1x/pom.xml
 @@ -26,7 +26,7 @@
@@ -77,7 +77,7 @@ index d3e2f7c..955e8da 100644
    </parent>
  
 diff --git a/platform-api/pom.xml b/platform-api/pom.xml
-index 148989b..05858f8 100644
+index 148989b..7e53220 100644
 --- a/platform-api/pom.xml
 +++ b/platform-api/pom.xml
 @@ -25,7 +25,7 @@
@@ -90,7 +90,7 @@ index 148989b..05858f8 100644
    </parent>
  
 diff --git a/pom.xml b/pom.xml
-index 78ee76c..61397c5 100644
+index 7641651..bb43484 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -21,7 +21,7 @@
@@ -102,3 +102,12 @@ index 78ee76c..61397c5 100644
    <packaging>pom</packaging>
  
    <parent>
+@@ -38,7 +38,7 @@
+     <annotations.version>1.0.0</annotations.version>
+     <kiji-delegation.version>1.0.0</kiji-delegation.version>
+     <kiji-platforms.version>1.1.0</kiji-platforms.version>
+-    <kiji-schema.version>1.1.1-SNAPSHOT</kiji-schema.version>
++    <kiji-schema.version>1.1.0-opower-1-profiling</kiji-schema.version>
+     <fake-hbase.version>0.1.0</fake-hbase.version>
+   </properties>
+ 
