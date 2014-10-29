@@ -1,0 +1,130 @@
+diff --git a/build-resources/pom.xml b/build-resources/pom.xml
+index 97c39aa..1464afd 100644
+--- a/build-resources/pom.xml
++++ b/build-resources/pom.xml
+@@ -25,7 +25,7 @@
+   <parent>
+     <groupId>org.kiji.mapreduce</groupId>
+     <artifactId>kiji-mapreduce-root</artifactId>
+-    <version>1.2.9</version>
++    <version>1.2.9-opower-1</version>
+     <relativePath>..</relativePath>
+   </parent>
+ 
+diff --git a/cdh4mr1-bridge/pom.xml b/cdh4mr1-bridge/pom.xml
+index fba326b..d6a3a2e 100644
+--- a/cdh4mr1-bridge/pom.xml
++++ b/cdh4mr1-bridge/pom.xml
+@@ -25,7 +25,7 @@
+   <parent>
+     <groupId>org.kiji.mapreduce</groupId>
+     <artifactId>kiji-mapreduce-root</artifactId>
+-    <version>1.2.9</version>
++    <version>1.2.9-opower-1</version>
+     <relativePath>..</relativePath>
+   </parent>
+ 
+diff --git a/dist/pom.xml b/dist/pom.xml
+index 890451d..e5c3bed 100644
+--- a/dist/pom.xml
++++ b/dist/pom.xml
+@@ -28,7 +28,7 @@
+   <parent>
+     <groupId>org.kiji.mapreduce</groupId>
+     <artifactId>kiji-mapreduce-root</artifactId>
+-    <version>1.2.9</version>
++    <version>1.2.9-opower-1</version>
+     <relativePath>..</relativePath>
+   </parent>
+ 
+diff --git a/hadoop1-bridge/pom.xml b/hadoop1-bridge/pom.xml
+index 77e5f0d..5f04a6c 100644
+--- a/hadoop1-bridge/pom.xml
++++ b/hadoop1-bridge/pom.xml
+@@ -25,7 +25,7 @@
+   <parent>
+     <groupId>org.kiji.mapreduce</groupId>
+     <artifactId>kiji-mapreduce-root</artifactId>
+-    <version>1.2.9</version>
++    <version>1.2.9-opower-1</version>
+     <relativePath>..</relativePath>
+   </parent>
+ 
+diff --git a/hadoop2-hbase96-bridge/pom.xml b/hadoop2-hbase96-bridge/pom.xml
+index b2d45dd..8e029fb 100644
+--- a/hadoop2-hbase96-bridge/pom.xml
++++ b/hadoop2-hbase96-bridge/pom.xml
+@@ -25,7 +25,7 @@
+   <parent>
+     <groupId>org.kiji.mapreduce</groupId>
+     <artifactId>kiji-mapreduce-root</artifactId>
+-    <version>1.2.9</version>
++    <version>1.2.9-opower-1</version>
+     <relativePath>..</relativePath>
+   </parent>
+ 
+diff --git a/kiji-mapreduce-archetype/pom.xml b/kiji-mapreduce-archetype/pom.xml
+index 07e49ec..55a5e29 100644
+--- a/kiji-mapreduce-archetype/pom.xml
++++ b/kiji-mapreduce-archetype/pom.xml
+@@ -25,7 +25,7 @@
+   <parent>
+     <groupId>org.kiji.mapreduce</groupId>
+     <artifactId>kiji-mapreduce-root</artifactId>
+-    <version>1.2.9</version>
++    <version>1.2.9-opower-1</version>
+     <relativePath>..</relativePath>
+   </parent>
+ 
+diff --git a/kiji-mapreduce/pom.xml b/kiji-mapreduce/pom.xml
+index a5acd00..2628060 100644
+--- a/kiji-mapreduce/pom.xml
++++ b/kiji-mapreduce/pom.xml
+@@ -27,7 +27,7 @@
+   <parent>
+     <groupId>org.kiji.mapreduce</groupId>
+     <artifactId>kiji-mapreduce-root</artifactId>
+-    <version>1.2.9</version>
++    <version>1.2.9-opower-1</version>
+     <relativePath>..</relativePath>
+   </parent>
+ 
+diff --git a/mr-hadoop1x/pom.xml b/mr-hadoop1x/pom.xml
+index 89d0342..e5a0689 100644
+--- a/mr-hadoop1x/pom.xml
++++ b/mr-hadoop1x/pom.xml
+@@ -26,7 +26,7 @@
+   <parent>
+     <groupId>org.kiji.mapreduce</groupId>
+     <artifactId>kiji-mapreduce-root</artifactId>
+-    <version>1.2.9</version>
++    <version>1.2.9-opower-1</version>
+     <relativePath>..</relativePath>
+   </parent>
+ 
+diff --git a/platform-api/pom.xml b/platform-api/pom.xml
+index d9b2792..61f47c8 100644
+--- a/platform-api/pom.xml
++++ b/platform-api/pom.xml
+@@ -25,7 +25,7 @@
+   <parent>
+     <groupId>org.kiji.mapreduce</groupId>
+     <artifactId>kiji-mapreduce-root</artifactId>
+-    <version>1.2.9</version>
++    <version>1.2.9-opower-1</version>
+     <relativePath>..</relativePath>
+   </parent>
+ 
+diff --git a/pom.xml b/pom.xml
+index a8b90f3..38d45c1 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -22,7 +22,7 @@
+ 
+   <groupId>org.kiji.mapreduce</groupId>
+   <artifactId>kiji-mapreduce-root</artifactId>
+-  <version>1.2.9</version>
++  <version>1.2.9-opower-1</version>
+   <packaging>pom</packaging>
+ 
+   <parent>

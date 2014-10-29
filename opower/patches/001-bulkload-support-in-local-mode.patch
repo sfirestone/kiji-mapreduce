@@ -1,0 +1,19 @@
+diff --git a/kiji-mapreduce/src/main/java/org/kiji/mapreduce/output/HFileMapReduceJobOutput.java b/kiji-mapreduce/src/main/java/org/kiji/mapreduce/output/HFileMapReduceJobOutput.java
+index 79788dd..5bcb5bc 100644
+--- a/kiji-mapreduce/src/main/java/org/kiji/mapreduce/output/HFileMapReduceJobOutput.java
++++ b/kiji-mapreduce/src/main/java/org/kiji/mapreduce/output/HFileMapReduceJobOutput.java
+@@ -266,6 +266,14 @@ public final class HFileMapReduceJobOutput extends KijiTableMapReduceJobOutput {
+     partitionFilePath = partitionFilePath.makeQualified(fs);
+     writePartitionFile(job.getConfiguration(), partitionFilePath, startKeys);
+ 
++    // if running in local mapreduce mode, write the partitions file location to
++    // PARTITIONER_PATH so that it can be found by the TotalOrderPartitioner
++    Configuration conf = job.getConfiguration();
++    boolean localMode = "local".equals(conf.get("mapred.job.tracker"));
++    if (localMode) {
++      conf.set(TotalOrderPartitioner.PARTITIONER_PATH, partitionFilePath.toString());
++    }
++
+     // Add it to the distributed cache.
+     try {
+       final URI cacheUri =
